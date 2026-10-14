@@ -40,3 +40,22 @@
 - 토요일 리포트 작성 시 journal/02_trade_journal.md의 D표(실패노트)를 갱신한다.
 - 커밋 메시지 예: "report: 2026-10-10 토요일 복기", "journal: 실패노트 갱신"
 - 대표의 개인 계좌번호, 증권사 로그인 정보 등은 절대 저장소에 기록하지 않는다.
+
+## 6. AI 팀 운영 방식 (서브에이전트)
+각 팀은 `.claude/agents/` 폴더의 서브에이전트로 일한다. 메인 Claude는 부문장 역할로 팀을 순서대로 호출하고, 마지막에 최종 리포트를 조립한다.
+토요일 복기 순서
+market-analyst → `reports/work/YYYY-MM-DD/01_market.md`
+failure-analyst → 실패노트(D표) 갱신, `06_failure.md`
+guru-strategist → `02_guru.md`
+메인: 위 산출물을 `docs/03_weekly_report_template.md`의 토요일 양식으로 묶어 `reports/YYYY-MM-DD_sat_review.md`에 저장
+일요일 준비 순서
+market-analyst → `01_market.md` (다음 주 일정 중심)
+guru-strategist → `02_guru.md`
+forecaster → `03_forecast.md`
+trading-strategist → `04_trading.md`
+risk-manager → `05_risk.md`
+메인: 리스크관리팀이 승인한 제안만 일요일 양식으로 묶어 `reports/YYYY-MM-DD_sun_plan.md`에 저장
+공통 규칙
+앞 팀의 산출물 파일이 없으면 다음 팀을 호출하지 않는다. 리포트에 실패 사실을 적는다.
+데이터·권한이 부족하면 지어내지 않는다. `journal/sos.md`에 기록한다.
+사용자 응답을 기다리지 않는다. 끝까지 작성하고 커밋한다.
