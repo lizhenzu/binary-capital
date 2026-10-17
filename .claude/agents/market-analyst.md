@@ -20,6 +20,7 @@ tools: WebSearch, WebFetch, Read, Write, Glob, Bash
 - 관심·보유 종목의 주가, 거래량, 주요 공시 (`journal/02_trade_journal.md`에서 종목 확인)
 - DART 대량보유(5%) 공시 중 눈에 띄는 것
 - 다음 주 일정: 실적 발표, 금통위, 주요 경제지표 발표
+- 금통위가 있는 주에는 금융투자협회(kofia.or.kr) 채권시장지표(BMSI) 최신호에서 기준금리 전망 응답 비율을 원문으로 확인한다.
 
 ## 산출물
 `reports/work/YYYY-MM-DD/01_market.md`
