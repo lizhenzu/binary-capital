@@ -1,0 +1,11 @@
+// Cloudflare Workers 배포 설정 — site/ 를 빌드한 정적 파일(site/dist)을 그대로 올린다.
+// Build command: cd site && npm ci && npm run build
+// Deploy command: npx wrangler deploy
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "binary-capital",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./site/dist"
+  }
+}
