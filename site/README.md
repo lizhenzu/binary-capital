@@ -49,13 +49,17 @@ npm run dev      # http://localhost:4321
 5. **Save and Deploy**. 1~2분 뒤 주소가 나온다.
 
 ### 3. 나만 보게 잠그기 (Cloudflare Access)
-1. 프로젝트 화면 → **Settings** → **General** → **Access policy** → **Enable access policy**(또는 Manage).
-2. 처음이면 Zero Trust 팀 이름을 정하라고 한다 → 아무 이름(예: `binarycapital`) 입력, **Free** 요금제 선택. 결제 수단 입력을 요구할 수 있지만 무료 요금제는 청구되지 않는다.
-3. 만들어진 정책(Application)을 열어 **Policies** → 규칙을 `Include` · `Emails` · `bit2001.lee@gmail.com` 하나만 남긴다.
-4. 로그인 방법은 기본값 **One-time PIN**(이메일로 6자리 코드)으로 둔다.
-5. 확인: 시크릿 창에서 `https://binary-capital.pages.dev` 접속 → 이메일 입력 화면이 나오면 성공. 다른 이메일로는 코드가 오지 않는다.
+버튼 하나로 켜지는 기본 잠금은 **미리보기 주소만** 잠근다. 본 주소까지 잠그려면 아래 순서를 끝까지 따른다.
+1. Workers & Pages → `binary-capital` 프로젝트 → **Settings** → **Enable access policy**.
+   - 처음이면 Zero Trust 팀 이름(예: `binarycapital`)과 **Free** 요금제를 고르라고 한다. 결제 수단을 물을 수 있지만 무료 요금제는 청구되지 않는다.
+2. 만들어진 정책 옆 **Manage** → Access **Applications** 목록에서 이 프로젝트 선택 → **Configure**.
+3. **Public hostname**의 **Subdomain** 칸에 있는 `*`를 지우고 **Save**. (이름 중복 오류가 나면 Application name을 `binary-capital-prod`처럼 바꾼다.) 이제 이 정책이 본 주소를 잠근다.
+4. 같은 화면의 **Policies**에서 규칙을 `Include` · `Emails` · `bit2001.lee@gmail.com` 하나만 남긴다.
+5. 프로젝트로 돌아가 **Settings** → **General** → **Enable access policy**를 한 번 더 눌러 미리보기용 정책도 만든다. 새 정책도 4번처럼 이메일을 맞춘다.
+6. Zero Trust → Access → Applications에 정책이 2개(본 주소용, `*.binary-capital.pages.dev` 미리보기용) 있는지 확인한다.
+7. 확인: 시크릿 창에서 `https://binary-capital.pages.dev` 접속 → 이메일 입력 화면이 나오면 성공. 이메일로 온 6자리 코드를 넣으면 열린다.
 
-> 주의: 기본 설정은 미리보기 주소(`*.binary-capital.pages.dev`)만 잠그는 경우가 있다. 3번 정책의 **Application domain**에 `binary-capital.pages.dev`(본 주소)도 들어 있는지 꼭 확인한다.
+참고: https://developers.cloudflare.com/pages/platform/known-issues/ ("Enable Access on your *.pages.dev domain")
 
 ### 4. 이후 운영
 - 리포트를 `main`에 커밋하면 자동 배포된다. 할 일 없음.
