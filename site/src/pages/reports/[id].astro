@@ -1,0 +1,59 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { getReports, kind, href, ymdw } from '../../lib/data';
+
+export async function getStaticPaths() {
+  const reports = await getReports();
+  return reports.map((r) => ({ params: { id: r.id }, props: { id: r.id } }));
+}
+
+const reports = await getReports();
+const r = reports.find((x) => x.id === Astro.props.id)!;
+const { Content, headings } = await render(r);
+const k = kind(r);
+const toc = headings.filter((h) => h.depth === 2);
+const sameType = reports.filter((x) => x.data.type === r.data.type);
+const idx = sameType.indexOf(r);
+const older = sameType[idx + 1];
+const pair = reports.find(
+  (x) => x.data.type !== r.data.type && x.data.date.getTime() === r.data.date.getTime(),
+);
+---
+<Base title={`${k.label} ${ymdw(r.data.date)}`} description={r.data.summary} section="reports">
+  <div class="report-head">
+    <div class="wrap">
+      <nav aria-label="경로" class="muted" style="font-size:14px"><a href="/reports/">리포트 보관함</a> › {k.label}</nav>
+      <span style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class={`badge ${r.data.type === 'sat_review' ? 'badge-sat' : 'badge-sun'}`} style="font-size:14px;padding:5px 12px">{k.long}</span>
+        {r.data.test && <span class="badge badge-test" style="font-size:14px;padding:5px 12px">시험 발행</span>}
+      </span>
+      <h1 class="h1" style="font-size:clamp(28px,3.6vw,38px);line-height:1.35">{r.data.title}</h1>
+      <div class="meta">
+        <span>작성 <span class="num">{ymdw(r.data.date)}</span></span>
+        {r.data.period && <span>{k.rangeLabel} <span class="num">{r.data.period}</span></span>}
+        <span>읽는 시간 약 15분</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap report-body">
+    {toc.length > 0 && (
+      <nav class="toc" aria-label="목차">
+        <div class="label">목차</div>
+        {toc.map((h) => <a href={`#${h.slug}`}>{h.text}</a>)}
+      </nav>
+    )}
+    <article class="report-main">
+      <div class="prose"><Content /></div>
+      <div class="pager">
+        {older && (
+          <a class="card" href={href(older)}><span class="k">← 이전 {k.label}</span><strong>{older.data.title}</strong></a>
+        )}
+        {pair && (
+          <a class="card next" href={href(pair)}><span class="k">함께 읽기: {kind(pair).label} →</span><strong>{pair.data.title}</strong></a>
+        )}
+      </div>
+    </article>
+  </div>
+</Base>

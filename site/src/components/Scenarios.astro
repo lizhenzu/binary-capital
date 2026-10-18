@@ -1,0 +1,17 @@
+---
+interface Scenario { case: string; title: string; range: string; sub?: string; condition?: string; action?: string }
+interface Props { items: Scenario[] }
+const { items } = Astro.props;
+const cls = (c: string) => (c.includes('낙관') ? 'bull' : c.includes('비관') ? 'bear' : 'base');
+---
+<div class="grid" style="--min:260px">
+  {items.map((s) => (
+    <div class={`card scn ${cls(s.case)}`}>
+      <div class="name">{s.case} · {s.title}</div>
+      <div class="range">{s.range}</div>
+      {s.sub && <div class="note">{s.sub}</div>}
+      {s.condition && <div class="cond">{s.condition}</div>}
+      {s.action && <div class="act">대응: {s.action}</div>}
+    </div>
+  ))}
+</div>

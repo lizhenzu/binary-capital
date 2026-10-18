@@ -1,0 +1,90 @@
+---
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { getReports, getJournal, countMentions } from '../lib/data';
+
+const reports = await getReports();
+const mentions = countMentions(reports);
+const { entry, codes, failRows, rules, updates } = await getJournal();
+const Journal = entry ? (await render(entry)).Content : null;
+const yellow = failRows.filter((r) => Number(r[1]) >= 2).length;
+const lastUpdate = updates.at(-1);
+---
+<Base title="실수 패턴 노트" section="mistakes">
+  <main class="wrap page" style="gap:48px">
+    <section class="grid" style="--min:320px;gap:32px;align-items:end">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <h1 class="h1" style="font-size:40px">실수 패턴 노트</h1>
+        <p class="lead" style="font-size:17px">이 회사의 핵심 목표는 "같은 실수를 반복하지 않는 것"입니다. 개인 투자자가 자주 하는 실수 {codes.length}가지에 코드를 붙이고, 매주 리포트에서 이 코드로 경고합니다.</p>
+      </div>
+      <div class="card" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+        <div><div class="note">누적 실수 기록</div><div class="num" style="font-size:28px;font-weight:600">{failRows.length}건</div></div>
+        <div><div class="note">🟡 주의 이상 코드</div><div class="num" style="font-size:28px;font-weight:600">{yellow}개</div></div>
+        <div><div class="note">최근 갱신</div><div class="num" style="font-size:18px;font-weight:600;margin-top:8px">{lastUpdate?.date ?? '—'}</div></div>
+      </div>
+    </section>
+
+    {lastUpdate && <div class="callout callout-ok"><strong>{lastUpdate.date} 갱신.</strong> {lastUpdate.text}</div>}
+
+    <section class="section" aria-labelledby="levels">
+      <h2 id="levels" class="h2" style="font-size:22px">경고 등급</h2>
+      <div class="grid" style="--min:240px">
+        <div class="card"><div style="font-weight:600">1회 · 기록</div><div style="font-size:15px;color:var(--ink-2);margin-top:6px">실패노트에 기록만 합니다.</div></div>
+        <div class="card" style="background:var(--warn-bg);border-color:var(--warn-line)"><div style="font-weight:600;color:#7a4b00">2회 · 🟡 주의</div><div style="font-size:15px;color:var(--warn-ink);margin-top:6px">주간 리포트 맨 앞에 경고를 띄웁니다.</div></div>
+        <div class="card" style="background:var(--bad-bg);border-color:var(--bad-line)"><div style="font-weight:600;color:var(--bad-ink)">3회 이상 · 🔴 위험</div><div style="font-size:15px;color:#4a1010;margin-top:6px">해당 유형 매매를 1주일 쉬고, 재발 방지 규칙을 새로 정합니다.</div></div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="codes">
+      <div class="section-head">
+        <h2 id="codes" class="h2" style="font-size:22px">실수 코드 {codes.length}가지</h2>
+        <span class="note">언급 = 지금까지 리포트 본문에서 이 코드가 나온 횟수 (경고·주의 문맥 포함)</span>
+      </div>
+      <div class="grid" style="--min:260px">
+        {codes.map((c) => (
+          <div class="card" style="display:flex;flex-direction:column;gap:8px;padding:18px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span class="code-badge">{c.code}</span>
+              <span class="note">언급 <span class="num" style="font-weight:600;color:var(--ink)">{mentions[c.code] ?? 0}</span>회</span>
+            </div>
+            <strong style="font-size:17px">{c.name}</strong>
+            <span style="font-size:15px;color:var(--ink-2)">{c.desc}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="grid" style="--min:340px;gap:24px;align-items:start">
+      <div class="card card-lg" aria-labelledby="rules">
+        <h2 id="rules" class="h3" style="margin-bottom:6px">우리 회사 매매 규칙</h2>
+        <p class="note" style="margin-bottom:14px">실패노트가 쌓이면 대표가 직접 고칩니다.</p>
+        <ol style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:16px">
+          {rules.map((r) => <li>{r}</li>)}
+        </ol>
+      </div>
+      <div class="card card-lg" aria-labelledby="fail">
+        <h2 id="fail" class="h3" style="margin-bottom:12px">나의 실패노트</h2>
+        {failRows.length === 0 ? (
+          <p style="margin:0;font-size:15px;color:var(--ink-2)">아직 기록된 실수가 없습니다.</p>
+        ) : (
+          <div class="prose" style="font-size:15px">
+            <table>
+              <thead><tr><th>코드</th><th>누적</th><th>최근 발생</th><th>종목</th><th>재발 방지 규칙</th></tr></thead>
+              <tbody>{failRows.map((r) => <tr><td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[5]}</td></tr>)}</tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+
+    {Journal && (
+      <section class="section journal" aria-labelledby="jr">
+        <h2 id="jr" class="h2" style="font-size:22px">매매일지 원문</h2>
+        <details>
+          <summary>journal/02_trade_journal.md 전체 보기</summary>
+          <div class="prose" style="padding-bottom:16px"><Journal /></div>
+        </details>
+      </section>
+    )}
+  </main>
+</Base>

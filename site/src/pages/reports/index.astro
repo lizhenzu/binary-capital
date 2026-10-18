@@ -1,0 +1,100 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getReports, kind, href, md, ymd, countMentions } from '../../lib/data';
+
+const reports = await getReports();
+const counts = { all: reports.length, sat_review: 0, sun_plan: 0 } as Record<string, number>;
+reports.forEach((r) => counts[r.data.type]++);
+const mentions = countMentions(reports);
+const topCodes = Object.entries(mentions).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([c]) => c);
+const topics = ['금통위', '외국인', '5% 대량보유', '국민연금', '서킷브레이커', ...topCodes];
+---
+<Base title="리포트 보관함" section="reports">
+  <main class="wrap page" style="gap:28px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h1 class="h1" style="font-size:40px">리포트 보관함</h1>
+      <p class="lead" style="font-size:17px">매주 토요일 지난주 복기, 일요일 다음 주 준비 리포트를 발행합니다. 지난 판단이 맞았는지 채점한 기록도 함께 남깁니다.</p>
+    </div>
+
+    <div class="card toolbar">
+      <div class="tabs" role="group" aria-label="리포트 종류">
+        <button type="button" class="tab" data-tab="all" aria-pressed="true">전체 <span class="num">{counts.all}</span></button>
+        <button type="button" class="tab" data-tab="sat_review" aria-pressed="false">토요 복기 <span class="num">{counts.sat_review}</span></button>
+        <button type="button" class="tab" data-tab="sun_plan" aria-pressed="false">일요 준비 <span class="num">{counts.sun_plan}</span></button>
+      </div>
+      <label for="q" class="sr-only">리포트 검색</label>
+      <input id="q" class="search" type="search" placeholder="종목명, 일정, 실수 코드 검색 (예: 금통위, M01)" autocomplete="off" />
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <section aria-label="리포트 목록" style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:12px">
+        {reports.map((r) => {
+          const k = kind(r);
+          const codes = [...new Set((r.body ?? '').match(/\bM(0[1-9]|1[0-2])\b/g) ?? [])].sort();
+          const search = [r.data.title, r.data.summary, r.body ?? ''].join(' ').toLowerCase();
+          return (
+            <a class="card arow" href={href(r)} data-type={r.data.type} data-search={search}>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span class="d">{md(r.data.date)}</span>
+                <span class={`badge ${r.data.type === 'sat_review' ? 'badge-sat' : 'badge-sun'}`}>{k.label}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+                <span class="note">작성 {ymd(r.data.date)}{r.data.period && ` · ${k.rangeLabel} ${r.data.period}`}</span>
+                <strong style="font-size:18px;line-height:1.5">{r.data.title}</strong>
+                <span style="font-size:15px;color:var(--ink-2);line-height:1.6">{r.data.summary}</span>
+                <span class="tags">
+                  {r.data.test && <span class="tag">시험 발행</span>}
+                  {codes.map((c) => <span class="tag">{c}</span>)}
+                </span>
+              </div>
+            </a>
+          );
+        })}
+        <p id="empty" class="note" hidden>조건에 맞는 리포트가 없습니다.</p>
+      </section>
+
+      <aside style="flex:1 1 280px;display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <h2 style="margin:0 0 14px;font-size:17px">주제별로 찾기</h2>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            {topics.map((t) => <button type="button" class="chip" data-q={t}>{t}</button>)}
+          </div>
+        </div>
+        <div class="callout callout-warn" style="font-size:14px">시험 발행분은 토·일요일이 아닌 날 작성됐습니다. 리포트마다 작성일과 대상 기간을 따로 표기합니다.</div>
+      </aside>
+    </div>
+  </main>
+</Base>
+
+<script>
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('.tab')];
+  const rows = [...document.querySelectorAll<HTMLElement>('.arow')];
+  const q = document.querySelector<HTMLInputElement>('#q')!;
+  const empty = document.querySelector<HTMLElement>('#empty')!;
+  let tab = 'all';
+  function apply() {
+    const term = q.value.trim().toLowerCase();
+    let shown = 0;
+    for (const r of rows) {
+      const ok = (tab === 'all' || r.dataset.type === tab) && (!term || (r.dataset.search ?? '').includes(term));
+      r.hidden = !ok;
+      if (ok) shown++;
+    }
+    empty.hidden = shown > 0;
+  }
+  tabs.forEach((b) =>
+    b.addEventListener('click', () => {
+      tab = b.dataset.tab!;
+      tabs.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      apply();
+    }),
+  );
+  q.addEventListener('input', apply);
+  document.querySelectorAll<HTMLButtonElement>('.chip').forEach((c) =>
+    c.addEventListener('click', () => {
+      q.value = c.dataset.q!;
+      apply();
+      q.focus();
+    }),
+  );
+</script>

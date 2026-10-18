@@ -1,0 +1,153 @@
+---
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import ReportCard from '../components/ReportCard.astro';
+import Scenarios from '../components/Scenarios.astro';
+import { getReports, href, ymdw, nextSaturday, changeView } from '../lib/data';
+
+const reports = await getReports();
+const sun = reports.find((r) => r.data.type === 'sun_plan');
+const sat = reports.find((r) => r.data.type === 'sat_review');
+const latest = reports[0];
+const s = sun?.data;
+const m = sat?.data.market;
+const scnHeading = sun ? (await render(sun)).headings.find((h) => h.depth === 2 && h.text.includes('시나리오')) : undefined;
+const scnHref = sun ? `${href(sun)}${scnHeading ? `#${scnHeading.slug}` : ''}` : '';
+const teams = [
+  ['시장분석팀', '지수·수급·환율·금리'],
+  ['고수전략팀', '버핏·린치 원칙, 5% 공시'],
+  ['예측분석팀', '낙관·기본·비관 시나리오'],
+  ['트레이딩전략팀', '검토 조건·손절·목표 기준'],
+  ['리스크관리팀', '쏠림·감정 매매 점검'],
+  ['실패분석팀', '반복 실수 패턴 경고'],
+];
+---
+<Base section="home">
+  <main class="wrap page">
+    {latest ? (
+      <section class="grid" style="--min:320px;gap:32px;align-items:stretch">
+        <div style="display:flex;flex-direction:column;gap:20px;justify-content:center">
+          <div class="eyebrow">이번 주 리서치{s?.period && ` · 준비 대상 ${s.period}`}</div>
+          <h1 class="h1">{s ? (s.plan ?? s.title) : latest.data.title}</h1>
+          <p class="lead">{s ? s.summary : latest.data.summary}</p>
+          <div style="display:flex;flex-wrap:wrap;gap:12px">
+            {sun && <a class="btn btn-primary" href={href(sun)}>일요 준비 리포트 읽기</a>}
+            {sat && <a class="btn btn-ghost" href={href(sat)}>토요 복기 읽기</a>}
+          </div>
+          <div class="note">최근 발행 {ymdw(latest.data.date)} · 다음 발행 {ymdw(nextSaturday(latest.data.date))} 예정</div>
+        </div>
+        {s && (
+          <aside class="card card-lg" aria-label="이번 주 회사 판단" style="display:flex;flex-direction:column;gap:20px;padding:28px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+              <strong style="font-size:16px">이번 주 회사 판단</strong>
+              {s.stance && <span class="pill">{s.stance}</span>}
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+              <div class="stat"><div class="k">승인된 매수 제안</div><div class="v">{s.approved_buys ?? '—'}건</div></div>
+              <div class="stat"><div class="k">신규 후보 종목</div><div class="v">{s.new_candidates ?? '—'}개</div></div>
+              <div class="stat"><div class="k">관찰 목록</div><div class="v">{s.watchlist?.length ?? 0}개</div></div>
+            </div>
+            <div style="border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:8px;font-size:15px">
+              <strong style="font-size:14px">실패분석팀 경고</strong>
+              <span style="color:var(--ink-2)">{sat?.data.warning === '없음' || !sat?.data.warning ? '이번 주 🟡·🔴 경고 없음' : sat.data.warning}</span>
+              {s.avoid && <>
+                <strong style="font-size:14px;margin-top:6px">다음 주 피해야 할 행동</strong>
+                <span style="color:var(--ink-2)">{s.avoid}</span>
+              </>}
+            </div>
+          </aside>
+        )}
+      </section>
+    ) : (
+      <section class="section"><h1 class="h1">아직 발행된 리포트가 없습니다</h1></section>
+    )}
+
+    {m && m.items.length > 0 && (
+      <section class="section" aria-labelledby="mkt">
+        <div class="section-head">
+          <h2 id="mkt" class="h2">지난주 시장 한눈에</h2>
+          <span class="note">기준 {m.asof}{m.source && ` · 출처 ${m.source}`}</span>
+        </div>
+        <div class="grid" style="--min:200px">
+          {m.items.map((it) => {
+            const c = changeView(it.change, it.unit);
+            return (
+              <div class="card tile">
+                <div class="k">{it.label}</div>
+                <div class="v">{it.value}</div>
+                {c ? <div class={`c ${c.cls}`}>{c.text}</div> : it.note && <div class="c plain">{it.note}</div>}
+              </div>
+            );
+          })}
+        </div>
+        <p class="note">색 표기는 국내 관례를 따릅니다: 상승은 빨강 ▲, 하락은 파랑 ▼.</p>
+      </section>
+    )}
+
+    {s?.scenarios && (
+      <section class="section" aria-labelledby="scn">
+        <div class="section-head">
+          <h2 id="scn" class="h2">다음 주 시나리오{s.period && ` (${s.period})`}</h2>
+          <a href={scnHref}>조건과 무효화 기준 전체 보기 →</a>
+        </div>
+        <Scenarios items={s.scenarios} />
+        <p class="note">예측분석팀 의견입니다. 확률이 아니라 조건과 근거로 씁니다.</p>
+      </section>
+    )}
+
+    {(s?.schedule || s?.watchlist) && (
+      <section class="grid" style="--min:340px;gap:24px">
+        {s.schedule && (
+          <div class="card card-lg" aria-labelledby="sch">
+            <h2 id="sch" class="h3" style="margin-bottom:8px">다음 주 주요 일정</h2>
+            <div class="rows">
+              {s.schedule.map((e) => (
+                <div class={e.key ? 'row-key' : ''} style="grid-template-columns:96px minmax(0,1fr)">
+                  <span class="num" style={`font-size:14px;color:${e.key ? '#7a4b00' : 'var(--muted)'};font-weight:${e.key ? 600 : 500}`}>{e.date}</span>
+                  <span style={`font-size:15px;font-weight:${e.key ? 600 : 400}`}>{e.event}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {s.watchlist && (
+          <div class="card card-lg" aria-labelledby="watch">
+            <div class="section-head" style="margin-bottom:8px">
+              <h2 id="watch" class="h3">관찰 목록</h2>
+              <span class="note">매수 검토 대상 아님 · 등록 기준 20/25점</span>
+            </div>
+            <div class="rows">
+              {s.watchlist.map((w) => (
+                <div style="grid-template-columns:minmax(0,1fr) 80px 100px">
+                  <span style="font-size:15px;font-weight:600">{w.name} <span class="num muted" style="font-weight:500;font-size:13px">{w.code}</span></span>
+                  <span class="num" style="font-size:15px">{w.score}/25</span>
+                  <span class="muted" style="font-size:14px">{w.type}</span>
+                </div>
+              ))}
+            </div>
+            <p class="note" style="margin-top:12px">점수는 고수전략팀의 25점 평가표 기준입니다. 종목마다 "사면 안 되는 이유"를 함께 싣습니다.</p>
+          </div>
+        )}
+      </section>
+    )}
+
+    <section class="section" aria-labelledby="recent">
+      <div class="section-head">
+        <h2 id="recent" class="h2">최근 리포트</h2>
+        <a href="/reports/">보관함 전체 보기 →</a>
+      </div>
+      <div class="grid" style="--min:260px">
+        {reports.slice(0, 4).map((r) => <ReportCard report={r} />)}
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="teams">
+      <h2 id="teams" class="h2">리포트를 만드는 6개 팀</h2>
+      <div class="grid" style="--min:180px">
+        {teams.map(([n, d]) => (
+          <div class="card" style="padding:18px"><div style="font-weight:600">{n}</div><div class="muted" style="font-size:14px;margin-top:6px">{d}</div></div>
+        ))}
+      </div>
+    </section>
+  </main>
+</Base>

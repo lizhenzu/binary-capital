@@ -1,0 +1,66 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  section?: 'home' | 'reports' | 'mistakes' | 'about';
+}
+const { title, description = '국내 주식 고수 따라하기 가상 투자회사의 주간 리포트', section } = Astro.props;
+const fullTitle = title ? `${title} — 바이너리 자산운용` : '바이너리 자산운용 주간 리포트';
+const nav = [
+  { id: 'home', href: '/', label: '홈' },
+  { id: 'reports', href: '/reports/', label: '리포트 보관함' },
+  { id: 'mistakes', href: '/mistakes/', label: '실수 패턴 노트' },
+  { id: 'about', href: '/about/', label: '회사 소개·원칙' },
+];
+---
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content={description} />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>{fullTitle}</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="topbar">학습용 분석 자료입니다 · 투자 권유가 아니며 투자 결과를 보장하지 않습니다</div>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">10</span>
+        <span class="brand-text"><strong>바이너리 자산운용</strong><span>Binary Capital 주간 리서치</span></span>
+      </a>
+      <nav class="nav" aria-label="주 메뉴">
+        {nav.map((n) => (
+          <a href={n.href} aria-current={section === n.id ? 'page' : undefined}>{n.label}</a>
+        ))}
+      </nav>
+      <span class="private-pill">비공개 운영 중</span>
+    </div>
+  </header>
+
+  <slot />
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px">
+        <strong style="color:#fff;font-size:16px">바이너리 자산운용 · Binary Capital</strong>
+        <nav aria-label="하단 메뉴" style="display:flex;flex-wrap:wrap;gap:20px;font-size:14px">
+          <a href="/reports/">리포트 보관함</a>
+          <a href="/mistakes/">실수 패턴 노트</a>
+          <a href="/about/">회사 소개·원칙</a>
+          <a href="/about/#disclaimer">면책 고지</a>
+        </nav>
+      </div>
+      <p>이 사이트의 리포트는 학습용 분석 자료이며 투자 결과를 보장하지 않습니다. 특정 종목의 매수·매도 권유가 아니며, 모든 투자 판단과 책임은 본인에게 있습니다. 바이너리 자산운용은 실제 금융회사가 아닌 개인 학습용 가상 회사입니다.</p>
+      <p class="src">데이터 출처: 네이버 증권, 한국은행, DART 전자공시, 하나은행 고시 환율 · 각 수치의 기준 날짜는 본문에 표기</p>
+    </div>
+  </footer>
+</body>
+</html>

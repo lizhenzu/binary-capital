@@ -1,0 +1,14 @@
+---
+import { kind, href, ymd, type Report } from '../lib/data';
+interface Props { report: Report }
+const { report: r } = Astro.props;
+const k = kind(r);
+---
+<a class="card rcard" href={href(r)}>
+  <span style="display:flex;gap:6px;flex-wrap:wrap">
+    <span class={`badge ${r.data.type === 'sat_review' ? 'badge-sat' : 'badge-sun'}`}>{k.long}</span>
+    {r.data.test && <span class="badge badge-test">시험 발행</span>}
+  </span>
+  <span class="num muted" style="font-size:13px">{ymd(r.data.date)}{r.data.period && ` · ${k.rangeLabel} ${r.data.period}`}</span>
+  <span class="t">{r.data.title}</span>
+</a>
